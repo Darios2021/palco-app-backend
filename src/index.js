@@ -4,7 +4,8 @@ import morgan from 'morgan'
 import 'dotenv/config'
 
 import { ensureConnection, sequelize } from './db.js'
-import './models/Person.js'             // registra modelos
+import './models/Person.js'
+import { seedIfEmpty } from './seed.js'   // 🟢 agregamos el seed
 import apiRoutes from './routes/index.js'
 
 const app = express()
@@ -28,7 +29,7 @@ app.options('*', cors())
 // Health
 app.get('/health', (_, res) => res.json({ ok: true }))
 app.get('/api/health', (_, res) => res.json({ ok: true }))
-app.get('/api/hello',  (_, res) => res.json({ msg: 'Backend OK ✅' }))
+app.get('/api/hello', (_, res) => res.json({ msg: 'Backend OK ✅' }))
 
 // API
 app.use('/api', apiRoutes)
@@ -46,8 +47,8 @@ const PORT = Number(process.env.PORT) || 3000
 
 const start = async () => {
   await ensureConnection()
-  // ⚠ Para empezar, usamos sync. En producción, luego pasamos a migrations.
-  await sequelize.sync() // { alter: true } si querés ajustar columnas automáticamente
+  await sequelize.sync()
+  await seedIfEmpty()                    // 🟢 carga datos si la tabla está vacía
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`API escuchando en http://0.0.0.0:${PORT}`)
   })
