@@ -1,0 +1,24 @@
+name: Back · Build & Deploy to CapRover
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "**"
+env:
+  CAPROVER_APPNAME: alade-back
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github@v1
+        with:
+          server: ${{ secrets.CAPROVER_URL }}
+          app: ${{ env.CAPROVER_APPNAME }}
+          token: ${{ secrets.CAPROVER_TOKEN_ALADE_BACK }}
+          branch: main
+          # path: "alade-back"  # si está en subcarpeta

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "rows": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "cols": 10
+  },
+  "people": [
+    {
+      "id": 1761617430392,
+      "name": "Leti Carlota",
+      "doc": "21t321314",
+      "org": "PFA",
+      "seat": "A4",
+      "present": true,
+      "presentAt": "2025-10-28T02:10:57.047Z"
+    },
+    {
+      "id": 1761617420251,
+      "name": "Lina Pérez",
+      "doc": "LA TIA",
+      "org": "PFA",
+      "seat": "A3",
+      "present": true,
+      "presentAt": "2025-10-28T02:21:01.404Z"
+    },
+    {
+      "id": 1761617339493,
+      "name": "Darío Pérez",
+      "doc": "647372828",
+      "org": "PSJ",
+      "seat": "A1",
+      "present": true,
+      "presentAt": "2025-10-28T02:22:11.752Z"
+    },
+    {
+      "id": 1761616358718,
+      "name": "CAROLINA CONTRERAS",
+      "doc": "40254119",
+      "org": "PSJ - RICA",
+      "seat": "A2",
+      "present": true,
+      "presentAt": "2025-10-28T02:08:12.695Z"
+    }
+  ]
+}
