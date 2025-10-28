@@ -1,4 +1,4 @@
-# OK ignorar dependencias locales y metadata
+cat > .dockerignore <<'EOF'
 node_modules
 npm-debug.log
 yarn.lock
@@ -6,10 +6,9 @@ pnpm-lock.yaml
 .git
 .gitignore
 .dockerignore
-
-# ⚠️ NO ignores src ni package.json
-# src/
-# dist/
-# .env*  (si querés ocultar variables locales, podés ignorarlas)
 .env
 .env.*
+EOF
+git add .dockerignore
+git commit -m "chore: proper .dockerignore (keep src)"
+git push
