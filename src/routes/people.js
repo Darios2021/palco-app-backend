@@ -1,113 +1,85 @@
+// src/routes/people.js
 import { Router } from 'express'
-import { loadDB, saveDB, buildSeatsMatrix } from '../data/store.js'
+import { Op } from 'sequelize'
+import { Person } from '../models/Person.js'
 
 const r = Router()
-const BadRequest = (m)=>Object.assign(new Error(m),{status:400})
-const NotFound = (m)=>Object.assign(new Error(m),{status:404})
 
-function flatSeats(cfg){ return buildSeatsMatrix(cfg.rows, cfg.cols).flat() }
-function seatExists(code, cfg){ return !code || flatSeats(cfg).includes(code) }
-function seatAvailable(code, people, ignoreId=null){
-  if (!code) return true
-  const holder = people.find(p => p.seat === code)
-  return !holder || holder.id === ignoreId
-}
-
-// GET /api/people
-r.get('/', async (_req, res, next) => {
+// Listar
+r.get('/', async (req, res, next) => {
   try {
-    const db = await loadDB()
-    res.json(db.people.sort((a,b)=>b.id-a.id))
-  } catch(e){ next(e) }
+    const rows = await Person.findAll({ order: [['id', 'DESC']] })
+    res.json(rows)
+  } catch (e) { next(e) }
 })
 
-// POST /api/people
+// Crear
 r.post('/', async (req, res, next) => {
   try {
-    const db = await loadDB()
-    const { name, doc='', org='', seat='' } = req.body || {}
-    if (!name?.trim()) throw BadRequest('El nombre es obligatorio')
-    if (seat) {
-      if (!seatExists(seat, db.config)) throw BadRequest('El asiento no existe')
-      if (!seatAvailable(seat, db.people)) throw BadRequest('El asiento ya está asignado')
-    }
-    const id = Date.now()
-    const row = {
-      id,
-      name: name.trim(),
-      doc: String(doc).trim(),
-      org: String(org).trim(),
-      seat: String(seat).trim(),
-      present: false,
-      presentAt: null       // <<< NUEVO: timestamp de ingreso
-    }
-    db.people.unshift(row)
-    await saveDB(db)
+    const { name, doc, org, cargo, seat } = req.body || {}
+    if (!name) return res.status(400).json({ error: 'name required' })
+    const row = await Person.create({ name, doc, org, cargo, seat })
     res.status(201).json(row)
-  } catch(e){ next(e) }
+  } catch (e) { next(e) }
 })
 
-// PUT /api/people/:id
+// Actualizar
 r.put('/:id', async (req, res, next) => {
   try {
-    const id = Number(req.params.id)
-    const db = await loadDB()
-    const idx = db.people.findIndex(p => p.id === id)
-    if (idx < 0) throw NotFound('Persona no encontrada')
-
-    const nextRow = { ...db.people[idx], ...(req.body || {}) }
-    if (!nextRow.name?.trim()) throw BadRequest('El nombre es obligatorio')
-    if (nextRow.seat) {
-      if (!seatExists(nextRow.seat, db.config)) throw BadRequest('El asiento no existe')
-      if (!seatAvailable(nextRow.seat, db.people, id)) throw BadRequest('El asiento ya está asignado')
-    }
-    db.people[idx] = nextRow
-    await saveDB(db)
-    res.json(nextRow)
-  } catch(e){ next(e) }
+    const row = await Person.findByPk(req.params.id)
+    if (!row) return res.status(404).json({ error: 'Not found' })
+    await row.update(req.body || {})
+    res.json(row)
+  } catch (e) { next(e) }
 })
 
-// DELETE /api/people/:id
+// Borrar
 r.delete('/:id', async (req, res, next) => {
   try {
-    const id = Number(req.params.id)
-    const db = await loadDB()
-    const before = db.people.length
-    db.people = db.people.filter(p => p.id !== id)
-    if (db.people.length === before) throw NotFound('Persona no encontrada')
-    await saveDB(db)
-    res.json({ ok:true })
-  } catch(e){ next(e) }
+    const deleted = await Person.destroy({ where: { id: req.params.id } })
+    res.json({ deleted })
+  } catch (e) { next(e) }
 })
 
-// POST /api/people/:id/checkin
+// Check-in por ID
 r.post('/:id/checkin', async (req, res, next) => {
   try {
-    const id = Number(req.params.id)
-    const db = await loadDB()
-    const p = db.people.find(x => x.id === id)
-    if (!p) throw NotFound('Persona no encontrada')
-    p.present = true
-    p.presentAt = new Date().toISOString()   // <<< guarda hora de ingreso
-    await saveDB(db)
-    res.json(p)
-  } catch(e){ next(e) }
+    const row = await Person.findByPk(req.params.id)
+    if (!row) return res.status(404).json({ error: 'Not found' })
+    await row.update({ present: true, presentAt: new Date() })
+    res.json(row)
+  } catch (e) { next(e) }
 })
 
-// POST /api/people/checkin/by-name {name}
+// Check-in por nombre exacto
 r.post('/checkin/by-name', async (req, res, next) => {
   try {
     const { name } = req.body || {}
-    if (!name?.trim()) throw BadRequest('Nombre requerido')
-    const db = await loadDB()
-    const q = name.trim().toLowerCase()
-    const p = db.people.find(x => x.name.toLowerCase() === q)
-    if (!p) throw NotFound('No existe asignación para este nombre')
-    p.present = true
-    p.presentAt = new Date().toISOString()   // <<< guarda hora de ingreso
-    await saveDB(db)
-    res.json(p)
-  } catch(e){ next(e) }
+    if (!name) return res.status(400).json({ error: 'name required' })
+    let row = await Person.findOne({ where: { name } })
+    if (!row) row = await Person.create({ name })
+    await row.update({ present: true, presentAt: new Date() })
+    res.json(row)
+  } catch (e) { next(e) }
+})
+
+// Búsqueda simple
+r.get('/search', async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim()
+    const rows = await Person.findAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.like]: `%${q}%` } },
+          { doc:  { [Op.like]: `%${q}%` } },
+          { org:  { [Op.like]: `%${q}%` } },
+        ],
+      },
+      order: [['name','ASC']],
+      limit: 50,
+    })
+    res.json(rows)
+  } catch (e) { next(e) }
 })
 
 export default r
