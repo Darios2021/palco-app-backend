@@ -1,0 +1,15 @@
+# OK ignorar dependencias locales y metadata
+node_modules
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml
+.git
+.gitignore
+.dockerignore
+
+# ⚠️ NO ignores src ni package.json
+# src/
+# dist/
+# .env*  (si querés ocultar variables locales, podés ignorarlas)
+.env
+.env.*
