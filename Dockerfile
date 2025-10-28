@@ -4,7 +4,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
-# Si tenés step de build (TS/webpack), habilitalo:
-# RUN npm run build
+ENV PORT=3000
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node","src/index.js"]
