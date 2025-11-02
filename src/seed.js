@@ -1,30 +1,75 @@
+// src/seed.js
 import { Person } from './models/Person.js'
-
-function* seatCodes(rows = ['A','B','C','D'], cols = 10) {
-  for (const r of rows) for (let i = 1; i <= cols; i++) yield `${r}${i}`
-}
+import { Palco } from './models/Palco.js'
+import { PalcoSeat } from './models/PalcoSeat.js'
 
 export async function seedIfEmpty() {
-  const n = await Person.count()
-  if (n > 0) {
-    console.log(`[SEED] Tabla person ya tiene ${n} filas.`)
-    return
+  // ====== SEED PALCOS / ASIENTOS ======
+  const palcoCount = await Palco.count()
+  const seatCount = await PalcoSeat.count()
+
+  if (palcoCount === 0) {
+    console.log('[SEED] Creando palcos iniciales...')
+    await Palco.bulkCreate([
+      { id: 1, name: 'PALCO PRINCIPAL' },
+      { id: 2, name: 'PALCO A' },
+      { id: 3, name: 'PALCO B' },
+    ])
   }
 
-  const names = ['Juan Pérez','María López','Carlos Gómez','Ana Fernández','Luis Morales']
-  const orgs = ['PFA','D-8','Operativo Central','CIMe','Tribuna Segura']
-  const cargos = ['Agente','Inspector','Oficial','Supervisor','Operador']
-  const seats = [...seatCodes(['A','B','C','D'], 10)]
-  const rows = names.map((name, i) => ({
-    name,
-    doc: `DNI${30000000 + i}`,
-    org: orgs[i % orgs.length],
-    cargo: cargos[i % cargos.length],
-    seat: seats[i],
-    present: i % 2 === 0,
-    presentAt: i % 2 === 0 ? new Date() : null,
-  }))
+  if (seatCount === 0) {
+    console.log('[SEED] Generando asientos por palco...')
 
-  await Person.bulkCreate(rows)
-  console.log(`[SEED] Insertadas ${rows.length} personas de prueba.`)
+    // Config base (ajustá filas/cols si tu palco real es diferente)
+    const layout = {
+      rows: ['A', 'B', 'C', 'D'],
+      cols: 12,
+    }
+
+    const seatsToCreate = []
+
+    // Palco 1,2,3 todos con mismo layout inicial
+    for (const palcoId of [1, 2, 3]) {
+      for (const rowLetter of layout.rows) {
+        for (let c = 1; c <= layout.cols; c++) {
+          seatsToCreate.push({
+            palcoId,
+            code: `${rowLetter}${c}`,
+            row: rowLetter,
+            col: c,
+          })
+        }
+      }
+    }
+
+    await PalcoSeat.bulkCreate(seatsToCreate)
+  }
+
+  // ====== SEED PERSONS (solo si está vacío) ======
+  const peopleCount = await Person.count()
+  if (peopleCount === 0) {
+    console.log('[SEED] Insertando personas demo...')
+
+    await Person.bulkCreate([
+      {
+        name: 'CAROLINA CONTRERAS',
+        doc: '40254119',
+        org: 'PFA',
+        seat: 'C5',
+        present: false,
+        presentAt: null,
+      },
+      {
+        name: 'NICOLAS CORTEZ',
+        doc: '65454354354',
+        org: 'PFA',
+        seat: 'A6',
+        present: true,
+        presentAt: new Date(),
+      },
+      // ...agregá acá más si querés
+    ])
+  } else {
+    console.log(`[SEED] Tabla person ya tiene ${peopleCount} filas.`)
+  }
 }

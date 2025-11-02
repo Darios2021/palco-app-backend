@@ -1,6 +1,7 @@
 // src/models/PalcoSeat.js
 import { DataTypes, Model } from 'sequelize'
 import { sequelize } from '../db.js'
+import { Palco } from './Palco.js'
 
 export class PalcoSeat extends Model {}
 
@@ -10,24 +11,44 @@ PalcoSeat.init({
     primaryKey: true,
     autoIncrement: true,
   },
-  palco_id: {
+
+  // FK -> palco.id
+  palcoId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
+    field: 'palco_id',
   },
-  row_letter: {
+
+  // Ej: "A1", "B5", "D10"
+  code: {
+    type: DataTypes.STRING(10),
+    allowNull: false,
+    unique: true,
+  },
+
+  // letra de fila ("A","B","C","D"...)
+  row: {
     type: DataTypes.STRING(5),
     allowNull: false,
   },
-  seat_number: {
+
+  // número de columna (1,2,3,...)
+  col: {
     type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-  },
-  seat_code: {
-    type: DataTypes.STRING(10),
     allowNull: false,
   },
 }, {
   sequelize,
-  tableName: 'palco_seat', // OJO: si en tu DB se llama "palco_seats", cambialo acá para que coincida EXACTO
+  tableName: 'palco_seat',
   timestamps: false,
+})
+
+// relaciones (por si más adelante las usamos con include)
+Palco.hasMany(PalcoSeat, {
+  as: 'seats',
+  foreignKey: 'palco_id',
+})
+PalcoSeat.belongsTo(Palco, {
+  as: 'palco',
+  foreignKey: 'palco_id',
 })

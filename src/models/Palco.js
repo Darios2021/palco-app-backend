@@ -16,6 +16,6 @@ Palco.init({
   },
 }, {
   sequelize,
-  tableName: 'palco', // si tu tabla se llama distinto, ajustá acá
-  timestamps: false,
+  tableName: 'palco',
+  timestamps: false, // no necesito created_at / updated_at acá
 })
