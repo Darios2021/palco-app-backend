@@ -6,6 +6,8 @@ import 'dotenv/config'
 
 import { ensureConnection, sequelize } from './db.js'
 import './models/Person.js'
+import './models/Palco.js'
+import './models/PalcoSeat.js'
 import { seedIfEmpty } from './seed.js'
 import apiRoutes from './routes/index.js'
 
@@ -71,7 +73,7 @@ app.get('/api/health', (_, res) => res.json({ ok: true }))
 app.get('/api/hello', (_, res) => res.json({ msg: 'Backend OK ✅' }))
 
 // DB ping
-app.get('/api/db/ping', async (req, res) => {
+app.get('/api/db/ping', async (_req, res) => {
   try {
     await sequelize.authenticate()
     const [rows] = await sequelize.query('SELECT 1 AS ok')
@@ -82,30 +84,32 @@ app.get('/api/db/ping', async (req, res) => {
   }
 })
 
-// API
+// API principal (people, seats, palcos)
 app.use('/api', apiRoutes)
 
 // 404 API
-app.use('/api', (req, res) => res.status(404).json({ error: 'Not Found' }))
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Not Found' }))
 
 // Error genérico
-app.use((err, req, res, next) => {
-  console.error(err)
+app.use((err, _req, res, _next) => {
+  console.error('[ERROR]', err)
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 const PORT = Number(process.env.PORT) || 3000
 
 const start = async () => {
-  await ensureConnection()
-  await sequelize.sync()
-  await seedIfEmpty()
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`API escuchando en http://0.0.0.0:${PORT}`)
-  })
+  try {
+    await ensureConnection()
+    await sequelize.sync()
+    await seedIfEmpty()
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ API escuchando en http://0.0.0.0:${PORT}`)
+    })
+  } catch (err) {
+    console.error('❌ No se pudo iniciar:', err)
+    process.exit(1)
+  }
 }
 
-start().catch(err => {
-  console.error('No se pudo iniciar:', err)
-  process.exit(1)
-})
+start()
