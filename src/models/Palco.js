@@ -10,32 +10,12 @@ Palco.init({
     primaryKey: true,
     autoIncrement: true,
   },
-  code: {
-    type: DataTypes.STRING(32),
+  name: {
+    type: DataTypes.STRING(120),
     allowNull: false,
-    unique: true,        // 'A', 'PRINCIPAL', 'B'
-  },
-  nombre: {
-    type: DataTypes.STRING(100),
-    allowNull: false,    // 'PALCO A'
-  },
-  prioridad: {
-    type: DataTypes.ENUM('alta','media','baja'),
-    allowNull: true,
-  },
-  orden_visual: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    defaultValue: 0,
-  },
-  activo: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: true,
   },
 }, {
   sequelize,
-  tableName: 'palcos',
-  timestamps: true, // created_at / updated_at
-  underscored: true,
+  tableName: 'palco', // si tu tabla se llama distinto, ajustá acá
+  timestamps: false,
 })

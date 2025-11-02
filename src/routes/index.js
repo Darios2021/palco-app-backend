@@ -1,11 +1,23 @@
 // src/routes/index.js
 import { Router } from 'express'
-import people from './people.js'
-// import seats from './seats.js' // habilítalo si corresponde
 
-const router = Router()
+// Rutas existentes
+import peopleRoutes from './people.js'
 
-router.use('/people', people)
-// router.use('/seats', seats)
+// NUEVO: rutas de palcos
+import palcosRoutes from './palcos.js'
 
-export default router
+const r = Router()
+
+// /api/people -> alta/baja/edición/listado/checkin
+r.use('/people', peopleRoutes)
+
+// /api/palcos -> asientos, marcar presente, liberar
+r.use('/palcos', palcosRoutes)
+
+// sanity check
+r.get('/', (_req, res) => {
+  res.json({ ok: true, msg: 'API root' })
+})
+
+export default r
