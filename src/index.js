@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 import 'dotenv/config'
+import cookieParser from 'cookie-parser'   // 👈 NUEVO
 
 import { ensureConnection, sequelize } from './db.js'
 import './models/Person.js'
@@ -16,12 +17,10 @@ import apiRoutes from './routes/index.js'
 const app = express()
 app.use(morgan('dev'))
 app.use(express.json())
+app.use(cookieParser())          // 👈 NUEVO (necesario para leer la cookie rt)
+app.set('trust proxy', 1)        // 👈 NUEVO (cookies secure detrás de Nginx)
 
-/* ===================== CORS robusto ===================== *
- * CORS_ORIGIN admite varios orígenes separados por coma o espacio.
- * Ej: CORS_ORIGIN="https://palco-app-frontend.cingulado.org, http://localhost:5173"
- * También soporta comodín de subdominio: "*.cingulado.org"
- */
+// ===== CORS robusto =====
 function normUrl(u) {
   if (!u) return ''
   try {
@@ -68,7 +67,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
-/* =================== /CORS robusto ====================== */
+// ===== /CORS robusto =====
 
 // Health check
 app.get('/health', (_, res) => res.json({ ok: true }))
