@@ -1,4 +1,6 @@
 // src/seed.js
+import bcrypt from 'bcryptjs'
+import { sequelize } from './db.js'
 import { Person } from './models/Person.js'
 import { Palco } from './models/Palco.js'
 import { PalcoSeat } from './models/PalcoSeat.js'
@@ -19,16 +21,8 @@ export async function seedIfEmpty() {
 
   if (seatCount === 0) {
     console.log('[SEED] Generando asientos por palco...')
-
-    // Config base (ajustá filas/cols si tu palco real es diferente)
-    const layout = {
-      rows: ['A', 'B', 'C', 'D'],
-      cols: 12,
-    }
-
+    const layout = { rows: ['A', 'B', 'C', 'D'], cols: 12 }
     const seatsToCreate = []
-
-    // Palco 1,2,3 todos con mismo layout inicial
     for (const palcoId of [1, 2, 3]) {
       for (const rowLetter of layout.rows) {
         for (let c = 1; c <= layout.cols; c++) {
@@ -41,15 +35,13 @@ export async function seedIfEmpty() {
         }
       }
     }
-
     await PalcoSeat.bulkCreate(seatsToCreate)
   }
 
-  // ====== SEED PERSONS (solo si está vacío) ======
+  // ====== SEED PERSONS ======
   const peopleCount = await Person.count()
   if (peopleCount === 0) {
     console.log('[SEED] Insertando personas demo...')
-
     await Person.bulkCreate([
       {
         name: 'CAROLINA CONTRERAS',
@@ -67,9 +59,26 @@ export async function seedIfEmpty() {
         present: true,
         presentAt: new Date(),
       },
-      // ...agregá acá más si querés
     ])
   } else {
     console.log(`[SEED] Tabla person ya tiene ${peopleCount} filas.`)
+  }
+
+  // ====== SEED USUARIO DEMO ======
+  const { User } = sequelize.models
+  if (User) {
+    const exists = await User.findOne({ where: { email: 'demo@acme.test' } })
+    if (!exists) {
+      const passwordHash = await bcrypt.hash('Demo1234!', 10)
+      await User.create({
+        email: 'demo@acme.test',
+        name: 'Demo User',
+        passwordHash,
+        role: 'admin',
+      })
+      console.log('[SEED] Usuario demo creado: demo@acme.test / Demo1234!')
+    } else {
+      console.log('[SEED] Usuario demo ya existe.')
+    }
   }
 }

@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 import 'dotenv/config'
-import cookieParser from 'cookie-parser'   // 👈 NUEVO
+import cookieParser from 'cookie-parser'
 
 import { ensureConnection, sequelize } from './db.js'
 import './models/Person.js'
@@ -17,8 +17,16 @@ import apiRoutes from './routes/index.js'
 const app = express()
 app.use(morgan('dev'))
 app.use(express.json())
-app.use(cookieParser())          // 👈 NUEVO (necesario para leer la cookie rt)
-app.set('trust proxy', 1)        // 👈 NUEVO (cookies secure detrás de Nginx)
+app.use(cookieParser())
+app.set('trust proxy', 1)
+
+// ===== Asociaciones (User ↔ RefreshToken) =====
+const { User, RefreshToken } = sequelize.models
+if (User && RefreshToken) {
+  User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'tokens' })
+  RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+}
+// ==============================================
 
 // ===== CORS robusto =====
 function normUrl(u) {
