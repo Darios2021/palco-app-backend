@@ -10,6 +10,24 @@ const ACCESS_TOKEN_TTL = parseInt(process.env.ACCESS_TOKEN_TTL || '900')
 const REFRESH_TOKEN_TTL = parseInt(process.env.REFRESH_TOKEN_TTL || '1209600')
 const isProd = process.env.NODE_ENV === 'production'
 
+function pickModels() {
+  const db = getDB()
+  const M = db.models || {}
+  // Fallbacks por nombre de modelo / tabla
+  const User =
+    M.User ||
+    M.users ||
+    Object.values(M).find(m => m.tableName === 'users')
+  const RefreshToken =
+    M.RefreshToken ||
+    M.refresh_tokens ||
+    Object.values(M).find(m => m.tableName === 'refresh_tokens')
+  if (!User || !RefreshToken) {
+    throw new Error('Model mapping error: User/RefreshToken no encontrados')
+  }
+  return { User, RefreshToken }
+}
+
 function signAccess(user) {
   return jwt.sign(
     { sub: user.id, email: user.email, name: user.name },
@@ -17,13 +35,11 @@ function signAccess(user) {
     { expiresIn: ACCESS_TOKEN_TTL }
   )
 }
-
 function signRefresh(payload) {
   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
     expiresIn: REFRESH_TOKEN_TTL
   })
 }
-
 function setRefreshCookie(res, token) {
   res.cookie('rt', token, {
     httpOnly: true,
@@ -37,7 +53,7 @@ function setRefreshCookie(res, token) {
 
 r.post('/login', async (req, res, next) => {
   try {
-    const { User, RefreshToken } = getDB().models
+    const { User, RefreshToken } = pickModels()
     const { email, password } = req.body || {}
 
     const user = await User.findOne({ where: { email } })
@@ -62,7 +78,7 @@ r.post('/login', async (req, res, next) => {
 
 r.post('/refresh', async (req, res, next) => {
   try {
-    const { RefreshToken, User } = getDB().models
+    const { RefreshToken, User } = pickModels()
     const rt = req.cookies?.rt
     if (!rt) return res.status(401).json({ error: 'Missing refresh cookie' })
 
@@ -92,7 +108,7 @@ r.post('/refresh', async (req, res, next) => {
 
 r.post('/logout', async (req, res, next) => {
   try {
-    const { RefreshToken } = getDB().models
+    const { RefreshToken } = pickModels()
     const rt = req.cookies?.rt
     if (rt) {
       try {
@@ -108,12 +124,12 @@ r.post('/logout', async (req, res, next) => {
 
 r.get('/me', async (req, res, next) => {
   try {
+    const { User } = pickModels()
     const auth = req.headers.authorization || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
     if (!token) return res.status(401).json({ error: 'Missing access token' })
 
     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET)
-    const { User } = getDB().models
     const user = await User.findByPk(payload.sub)
     if (!user) return res.status(404).json({ error: 'User not found' })
 
