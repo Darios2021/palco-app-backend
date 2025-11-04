@@ -8,6 +8,8 @@ import { ensureConnection, sequelize } from './db.js'
 import './models/Person.js'
 import './models/Palco.js'
 import './models/PalcoSeat.js'
+import './models/User.js'
+import './models/RefreshToken.js'
 import { seedIfEmpty } from './seed.js'
 import apiRoutes from './routes/index.js'
 
@@ -28,7 +30,9 @@ function normUrl(u) {
     const isHttp  = url.protocol === 'http:'
     const defaultPort =
       (isHttps && url.port === '443') || (isHttp && url.port === '80')
-    const hostPort = defaultPort ? url.hostname : `${url.hostname}${url.port ? ':' + url.port : ''}`
+    const hostPort = defaultPort
+      ? url.hostname
+      : `${url.hostname}${url.port ? ':' + url.port : ''}`
     return `${url.protocol}//${hostPort}`
   } catch {
     return String(u).replace(/\/+$/, '')
@@ -43,7 +47,6 @@ const rawAllow = (process.env.CORS_ORIGIN || '')
 const allowlist = rawAllow.map(normUrl)
 
 function matchesWildcard(origin, pattern) {
-  // pattern tipo "*.cingulado.org"
   if (!pattern.startsWith('*.')) return false
   const suf = pattern.slice(1) // ".cingulado.org"
   return origin.endsWith(suf)
@@ -67,7 +70,7 @@ app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 /* =================== /CORS robusto ====================== */
 
-// Health
+// Health check
 app.get('/health', (_, res) => res.json({ ok: true }))
 app.get('/api/health', (_, res) => res.json({ ok: true }))
 app.get('/api/hello', (_, res) => res.json({ msg: 'Backend OK ✅' }))
@@ -84,16 +87,20 @@ app.get('/api/db/ping', async (_req, res) => {
   }
 })
 
-// API principal (people, seats, palcos)
+// API principal
 app.use('/api', apiRoutes)
 
 // 404 API
-app.use('/api', (_req, res) => res.status(404).json({ error: 'Not Found' }))
+app.use('/api', (_req, res) =>
+  res.status(404).json({ error: 'Not Found' })
+)
 
 // Error genérico
 app.use((err, _req, res, _next) => {
   console.error('[ERROR]', err)
-  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  })
 })
 
 const PORT = Number(process.env.PORT) || 3000
