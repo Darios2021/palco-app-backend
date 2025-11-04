@@ -6,11 +6,14 @@ import 'dotenv/config'
 import cookieParser from 'cookie-parser'
 
 import { ensureConnection, sequelize } from './db.js'
+
+// Importar modelos para registrarlos en Sequelize (y que apliquen sus asociaciones internas)
 import './models/Person.js'
 import './models/Palco.js'
 import './models/PalcoSeat.js'
 import './models/User.js'
 import './models/RefreshToken.js'
+
 import { seedIfEmpty } from './seed.js'
 import apiRoutes from './routes/index.js'
 
@@ -18,15 +21,7 @@ const app = express()
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(cookieParser())
-app.set('trust proxy', 1)
-
-// ===== Asociaciones (User ↔ RefreshToken) =====
-const { User, RefreshToken } = sequelize.models
-if (User && RefreshToken) {
-  User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'tokens' })
-  RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
-}
-// ==============================================
+app.set('trust proxy', 1) // cookies secure detrás de Nginx/CapRover
 
 // ===== CORS robusto =====
 function normUrl(u) {
@@ -98,16 +93,12 @@ app.get('/api/db/ping', async (_req, res) => {
 app.use('/api', apiRoutes)
 
 // 404 API
-app.use('/api', (_req, res) =>
-  res.status(404).json({ error: 'Not Found' })
-)
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Not Found' }))
 
 // Error genérico
 app.use((err, _req, res, _next) => {
   console.error('[ERROR]', err)
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  })
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 const PORT = Number(process.env.PORT) || 3000

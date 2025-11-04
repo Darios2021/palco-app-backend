@@ -1,5 +1,6 @@
 // src/db.js
 import { Sequelize } from 'sequelize'
+import 'dotenv/config'
 
 const DIALECT = process.env.DB_DIALECT || 'mysql'
 const HOST    = process.env.DB_HOST || 'localhost'
@@ -14,6 +15,10 @@ export const sequelize = new Sequelize(DBNAME, USER, PASS, {
   dialect: DIALECT,
   logging: false,
   dialectOptions: { multipleStatements: true },
+  define: {
+    underscored: false,     // 👈 muy importante: columnas camelCase (createdAt, userId)
+    freezeTableName: false, // usa tableName definido en cada modelo
+  },
 })
 
 /** Compatibilidad: algunos módulos esperan getDB() */

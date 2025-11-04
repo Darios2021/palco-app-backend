@@ -24,6 +24,6 @@ export const User = sequelize.define('User', {
   },
 }, {
   tableName: 'users',
-  timestamps: true,     // usa createdAt / updatedAt
-  underscored: false,   // ⚠️ importante (camelCase en DB)
+  timestamps: true,     // createdAt / updatedAt (camelCase)
+  underscored: false,   // 👈 asegura camelCase
 })

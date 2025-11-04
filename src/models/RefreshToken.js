@@ -14,7 +14,7 @@ export const RefreshToken = sequelize.define('RefreshToken', {
     allowNull: false,
     unique: true,
   },
-  userId: {                 // ⚠️ camelCase como en tu tabla
+  userId: {                 // 👈 camelCase como tu tabla
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },
@@ -40,10 +40,9 @@ export const RefreshToken = sequelize.define('RefreshToken', {
   },
 }, {
   tableName: 'refresh_tokens',
-  timestamps: true,     // usa createdAt / updatedAt
-  underscored: false,   // ⚠️ importante (camelCase en DB)
+  timestamps: true,     // createdAt / updatedAt (camelCase)
+  underscored: false,   // 👈 asegura camelCase
 })
 
-// Asociaciones (FK en camelCase)
 RefreshToken.belongsTo(User, { foreignKey: 'userId' })
 User.hasMany(RefreshToken, { foreignKey: 'userId' })
