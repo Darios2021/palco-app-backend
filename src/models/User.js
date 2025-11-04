@@ -4,7 +4,7 @@ import { sequelize } from '../db.js'
 
 export const User = sequelize.define('User', {
   id: {
-    type: DataTypes.BIGINT.UNSIGNED,
+    type: DataTypes.INTEGER.UNSIGNED, // coincide con tu tabla actual
     autoIncrement: true,
     primaryKey: true,
   },
@@ -14,21 +14,18 @@ export const User = sequelize.define('User', {
     unique: true,
     validate: { isEmail: true },
   },
-  name: {
-    type: DataTypes.STRING(190),
-    allowNull: false,
-  },
+  // ⚠️ La columna ya existente en tu DB es "passwordHash" (camelCase)
   passwordHash: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(100), // coincide con varchar(100) que viste
     allowNull: false,
   },
-  role: {
-    type: DataTypes.STRING(50),
+  name: {
+    type: DataTypes.STRING(120),
     allowNull: false,
-    defaultValue: 'user',
   },
+  // createdAt / updatedAt ya existen en camelCase, Sequelize los maneja solo
 }, {
   tableName: 'users',
-  underscored: true,
-  timestamps: true,
+  underscored: false,   // 👈 importante: usar camelCase como en tu tabla
+  timestamps: true,     // usa createdAt / updatedAt (camelCase)
 })
