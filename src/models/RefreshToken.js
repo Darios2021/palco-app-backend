@@ -1,10 +1,11 @@
 // src/models/RefreshToken.js
 import { DataTypes } from 'sequelize'
 import { sequelize } from '../db.js'
+import { User } from './User.js'
 
 export const RefreshToken = sequelize.define('RefreshToken', {
   id: {
-    type: DataTypes.BIGINT.UNSIGNED,
+    type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     primaryKey: true,
   },
@@ -13,28 +14,36 @@ export const RefreshToken = sequelize.define('RefreshToken', {
     allowNull: false,
     unique: true,
   },
-  userId: {
-    field: 'user_id',
-    type: DataTypes.BIGINT.UNSIGNED,
+  userId: {                 // ⚠️ camelCase como en tu tabla
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },
-  replacedBy: {
-    field: 'replaced_by',
+  userAgent: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  ip: {
     type: DataTypes.STRING(64),
     allowNull: true,
   },
   revokedAt: {
-    field: 'revoked_at',
     type: DataTypes.DATE,
     allowNull: true,
   },
+  replacedBy: {
+    type: DataTypes.STRING(64),
+    allowNull: true,
+  },
   expiresAt: {
-    field: 'expires_at',
     type: DataTypes.DATE,
     allowNull: false,
   },
 }, {
   tableName: 'refresh_tokens',
-  underscored: true,
-  timestamps: true,
+  timestamps: true,     // usa createdAt / updatedAt
+  underscored: false,   // ⚠️ importante (camelCase en DB)
 })
+
+// Asociaciones (FK en camelCase)
+RefreshToken.belongsTo(User, { foreignKey: 'userId' })
+User.hasMany(RefreshToken, { foreignKey: 'userId' })
