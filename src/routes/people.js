@@ -16,9 +16,10 @@ r.get('/', async (req, res, next) => {
 // Crear
 r.post('/', async (req, res, next) => {
   try {
-    const { name, doc, org, cargo, seat } = req.body || {}
+    const { name, org, cargo, seat } = req.body || {}
     if (!name) return res.status(400).json({ error: 'name required' })
-    const row = await Person.create({ name, doc, org, cargo, seat })
+
+    const row = await Person.create({ name, org, cargo, seat })
     res.status(201).json(row)
   } catch (e) { next(e) }
 })
@@ -28,7 +29,12 @@ r.put('/:id', async (req, res, next) => {
   try {
     const row = await Person.findByPk(req.params.id)
     if (!row) return res.status(404).json({ error: 'Not found' })
-    await row.update(req.body || {})
+
+    // Solo campos permitidos
+    const payload = (({ name, org, cargo, seat, present, presentAt }) =>
+      ({ name, org, cargo, seat, present, presentAt }))(req.body || {})
+
+    await row.update(payload)
     res.json(row)
   } catch (e) { next(e) }
 })
@@ -63,19 +69,21 @@ r.post('/checkin/by-name', async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
-// Búsqueda simple
+// Búsqueda simple (name / org / cargo)
 r.get('/search', async (req, res, next) => {
   try {
     const q = String(req.query.q || '').trim()
+    const like = `%${q}%`
+
     const rows = await Person.findAll({
       where: {
         [Op.or]: [
-          { name: { [Op.like]: `%${q}%` } },
-          { doc:  { [Op.like]: `%${q}%` } },
-          { org:  { [Op.like]: `%${q}%` } },
+          { name:  { [Op.like]: like } },
+          { org:   { [Op.like]: like } },
+          { cargo: { [Op.like]: like } },
         ],
       },
-      order: [['name','ASC']],
+      order: [['name', 'ASC']],
       limit: 50,
     })
     res.json(rows)
